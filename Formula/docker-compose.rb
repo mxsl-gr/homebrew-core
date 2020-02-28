@@ -1,37 +1,27 @@
-class DockerCompose < Formula
-  include Language::Python::Virtualenv
+class Trantor < Formula
+  desc "Terminus Trantor CLI"
+  homepage "https://www.terminus.io/"
+  url "http://mxsl.oss-cn-hangzhou.aliyuncs.com/dist/trantor/trantor.0.0.1.tar.gz"
+  version "0.0.1"
+  sha256 "6cbd81d22ce95954366bf81c003d818b33f33929a45e65d87a61b3e560425576"
 
-  desc "Isolated development environments using Docker"
-  homepage "https://docs.docker.com/compose/"
-  url "https://github.com/docker/compose/archive/1.25.4.tar.gz"
-  sha256 "844a3d9c9ad13f1227bd828b3693dfb2001dcaea14de7c2a71f8aee47dbf19a7"
-  head "https://github.com/docker/compose.git"
-
-  bottle do
-    cellar :any
-    sha256 "ebe367f2fb704314ae2875d865c40c9b8b1e870cf888742c99216356f114961f" => :catalina
-    sha256 "54f367f476359b1a12e8b0f23fc9a7583732f2bd678ab031fd6ea980350dbad3" => :mojave
-    sha256 "ef81d6ad5b72e9fc2233e0f314d7b71eb20a9641e763957a2a1b2adc594791cf" => :high_sierra
-  end
-
-  depends_on "libyaml"
-  depends_on "python@3.8"
-
-  uses_from_macos "libffi"
+  depends_on "docker"
 
   def install
-    system "./script/build/write-git-sha" if build.head?
-    venv = virtualenv_create(libexec, "python3")
-    system libexec/"bin/pip", "install", "-v", "--no-binary", ":all:",
-                              "--ignore-installed", buildpath
-    system libexec/"bin/pip", "uninstall", "-y", "docker-compose"
-    venv.pip_install_and_link buildpath
+    # Remove windows files
+    lib.install Dir["lib/*"]
+    libexec.install Dir["libexec/*"]
 
-    bash_completion.install "contrib/completion/bash/docker-compose"
-    zsh_completion.install "contrib/completion/zsh/_docker-compose"
+    Pathname.glob("#{libexec}/bin/*.sh") do |path|
+      script_name = path.basename
+      bin_name    = path.basename ".sh"
+      (bin+bin_name).write shim_script(script_name)
+    end
+    rm_f Dir["libexec/bin"]
   end
 
   test do
-    system bin/"docker-compose", "--help"
+    system "#{bin}/trantor", "version"
   end
+
 end
